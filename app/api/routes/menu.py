@@ -96,9 +96,9 @@ async def get_menu(
         global_customizations=[CustomizationResponse.model_validate(c) for c in global_customizations],
     )
     
-    # Cache the result for 5 minutes (300 seconds)
+    # Cache the result for 24 hours (86400 seconds)
     response_json = response_obj.model_dump_json()
-    await set_cache(cache_key, response_json, expire_seconds=300)
+    await set_cache(cache_key, response_json, expire_seconds=86400)
     
     return response_obj
 
