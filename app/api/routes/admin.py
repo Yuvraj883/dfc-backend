@@ -164,6 +164,8 @@ async def update_reservation_status(
     )
 
 
+from app.core.redis import delete_cache
+
 @router.post("/menu/item", response_model=dict)
 async def create_menu_item(
     data: MenuItemCreate,
@@ -173,6 +175,7 @@ async def create_menu_item(
     item = MenuItem(**data.model_dump())
     db.add(item)
     await db.flush()
+    await delete_cache("menu_cache*")
     return {"id": str(item.id), "name": item.name}
 
 
@@ -189,6 +192,8 @@ async def update_menu_item(
         raise HTTPException(status_code=404, detail="Item not found")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(item, k, v)
+    await db.commit()
+    await delete_cache("menu_cache*")
     return {"ok": True}
 
 
@@ -204,6 +209,7 @@ async def delete_menu_item(
         raise HTTPException(status_code=404, detail="Item not found")
     await db.delete(item)
     await db.commit()
+    await delete_cache("menu_cache*")
     return {"ok": True}
 
 

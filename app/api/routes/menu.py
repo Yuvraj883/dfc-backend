@@ -13,6 +13,10 @@ from app.services.orders import get_global_customizations
 router = APIRouter(prefix="/menu", tags=["menu"])
 
 
+import json
+from fastapi.responses import JSONResponse
+from app.core.redis import get_cache, set_cache
+
 @router.get("", response_model=MenuResponse)
 async def get_menu(
     vegetarian: bool | None = None,
@@ -22,6 +26,16 @@ async def get_menu(
     search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
+    # Construct a deterministic cache key based on query parameters
+    cache_key = f"menu_cache:v={vegetarian}:g={gluten_free}:s={spicy}:p={popular}:search={search}"
+    
+    # Try to fetch from Redis
+    cached_data = await get_cache(cache_key)
+    if cached_data:
+        # Return the pre-serialized JSON directly for maximum speed
+        return JSONResponse(content=json.loads(cached_data))
+
+    # Fallback to database query
     result = await db.execute(
         select(MenuCategory)
         .options(selectinload(MenuCategory.items).selectinload(MenuItem.customizations))
@@ -77,10 +91,16 @@ async def get_menu(
                 )
             )
 
-    return MenuResponse(
+    response_obj = MenuResponse(
         categories=response_categories,
         global_customizations=[CustomizationResponse.model_validate(c) for c in global_customizations],
     )
+    
+    # Cache the result for 5 minutes (300 seconds)
+    response_json = response_obj.model_dump_json()
+    await set_cache(cache_key, response_json, expire_seconds=300)
+    
+    return response_obj
 
 
 @router.get("/item/{item_id}", response_model=MenuItemResponse)
