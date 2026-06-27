@@ -46,6 +46,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(content.router, prefix="/api")
 
 
+@app.get("/")
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": settings.app_name}
