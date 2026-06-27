@@ -26,16 +26,16 @@ def set_auth_cookies(response: Response, access: str, refresh: str) -> None:
         key="access_token",
         value=access,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=settings.access_token_expire_minutes * 60,
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=settings.refresh_token_expire_days * 86400,
     )
 
@@ -81,8 +81,8 @@ async def login(data: LoginRequest, response: Response, db: AsyncSession = Depen
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    response.delete_cookie("access_token", secure=True, samesite="none")
+    response.delete_cookie("refresh_token", secure=True, samesite="none")
     return {"ok": True}
 
 
