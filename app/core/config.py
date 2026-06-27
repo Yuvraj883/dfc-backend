@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     app_name: str = "Delhi Fried Chicken API"
     database_url: str = "postgresql+asyncpg://dfc:dfc_dev_password@localhost:5432/dfc"
     redis_url: str = "redis://localhost:6379/0"
+    upstash_redis_rest_url: str = ""
+    upstash_redis_rest_token: str = ""
     secret_key: str = "dev-secret-change-in-production"
     frontend_url: str = "http://localhost:3000"
     access_token_expire_minutes: int = 60 * 24
