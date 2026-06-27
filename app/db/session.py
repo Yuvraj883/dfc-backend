@@ -9,9 +9,9 @@ engine = create_async_engine(
     settings.database_url, 
     echo=False,
     poolclass=NullPool,
+    prepared_statement_cache_size=0,
     connect_args={
         "server_settings": {"jit": "off"},
-        "prepared_statement_cache_size": 0,
         "statement_cache_size": 0
     }
 )
