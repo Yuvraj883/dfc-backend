@@ -230,24 +230,35 @@ async def get_availability(db: AsyncSession, target_date) -> list[dict]:
     open_time = datetime.strptime("11:00", "%H:%M").time()
     close_time = datetime.strptime("23:00", "%H:%M").time()
 
+    # Fetch all reservations for the target date in a SINGLE query
+    res_result = await db.execute(
+        select(Reservation).where(
+            Reservation.date == target_date,
+            Reservation.status.in_([ReservationStatus.pending, ReservationStatus.confirmed]),
+        )
+    )
+    all_reservations = res_result.scalars().all()
+    
+    # Group by slot time
+    slot_counts = {}
+    for r in all_reservations:
+        slot_str = r.time.strftime("%H:%M")
+        slot_counts[slot_str] = slot_counts.get(slot_str, 0) + 1
+
     slots = []
     current = datetime.combine(target_date, open_time)
     end = datetime.combine(target_date, close_time)
 
     while current < end:
         slot_time = current.time()
-        result = await db.execute(
-            select(Reservation).where(
-                Reservation.date == target_date,
-                Reservation.time == slot_time,
-                Reservation.status.in_([ReservationStatus.pending, ReservationStatus.confirmed]),
-            )
-        )
-        count = len(result.scalars().all())
+        slot_str = slot_time.strftime("%H:%M")
+        
+        count = slot_counts.get(slot_str, 0)
         remaining = max(max_per_slot - count, 0)
+        
         slots.append(
             {
-                "time": slot_time.strftime("%H:%M"),
+                "time": slot_str,
                 "available": remaining > 0,
                 "remaining": remaining,
             }
