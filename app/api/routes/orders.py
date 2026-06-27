@@ -153,13 +153,27 @@ async def validate_promo(data: ValidatePromoRequest, db: AsyncSession = Depends(
     return ValidatePromoResponse(valid=True, discount=discount, message="Promo applied")
 
 
-@router.get("/reservations/availability", response_model=AvailabilityResponse)
+from app.core.redis import get_cache, set_cache
+import json
+from fastapi.responses import JSONResponse
+
+@router.get("/reservations/availability")
 async def reservation_availability(
     date: date = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
+    cache_key = f"availability_{date.isoformat()}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return JSONResponse(content=json.loads(cached))
+
     slots = await get_availability(db, date)
-    return AvailabilityResponse(date=date, slots=slots)
+    response_obj = AvailabilityResponse(date=date, slots=slots)
+    
+    # Cache for 60 seconds (reservations are dynamic but 1min is a safe buffer for UX speed)
+    await set_cache(cache_key, response_obj.model_dump_json(), expire_seconds=60)
+    
+    return response_obj
 
 
 @router.post("/reservations", response_model=ReservationResponse)
@@ -181,6 +195,11 @@ async def book_reservation(
         reservation.time.strftime("%H:%M"),
         cancel_token,
     )
+    
+    # Invalidate cache for this specific date
+    from app.core.redis import delete_cache
+    await delete_cache(f"availability_{request.date.isoformat()}")
+    
     return ReservationResponse(
         id=reservation.id,
         name=reservation.name,
@@ -221,6 +240,11 @@ async def cancel_reservation(token: str = Query(...), db: AsyncSession = Depends
         raise HTTPException(status_code=404, detail="Reservation not found")
 
     reservation.status = ReservationStatus.cancelled
+    await db.commit()
+    
+    from app.core.redis import delete_cache
+    await delete_cache(f"availability_{reservation.date.isoformat()}")
+    
     return {"ok": True, "message": "Reservation cancelled"}
 
 
