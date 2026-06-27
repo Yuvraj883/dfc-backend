@@ -19,9 +19,16 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    await seed_database()
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await seed_database()
+        print("Database initialized successfully!")
+    except Exception as e:
+        print(f"CRITICAL STARTUP ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        raise e
     yield
     await engine.dispose()
 
