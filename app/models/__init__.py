@@ -78,7 +78,7 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     google_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.customer)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.customer, index=True)
     loyalty_points: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -101,7 +101,7 @@ class MenuItem(Base):
     __tablename__ = "menu_items"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("menu_categories.id"))
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("menu_categories.id"), index=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     price: Mapped[float] = mapped_column(Float)
@@ -123,7 +123,7 @@ class ItemCustomization(Base):
     __tablename__ = "item_customizations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    menu_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("menu_items.id"), nullable=True)
+    menu_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("menu_items.id"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(100))
     customization_type: Mapped[str] = mapped_column(String(20), default="single")
     options: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -177,11 +177,11 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     order_type: Mapped[OrderType] = mapped_column(Enum(OrderType))
     table_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("tables.id"), nullable=True)
     table_session_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("table_sessions.id"), nullable=True)
-    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), default=OrderStatus.received)
+    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), default=OrderStatus.received, index=True)
     subtotal: Mapped[float] = mapped_column(Float)
     tax: Mapped[float] = mapped_column(Float, default=0)
     discount: Mapped[float] = mapped_column(Float, default=0)
@@ -195,7 +195,7 @@ class Order(Base):
     guest_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     guest_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     loyalty_points_earned: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     user: Mapped[Optional["User"]] = relationship(back_populates="orders")
     table_session: Mapped[Optional["TableSession"]] = relationship(back_populates="orders")
@@ -228,7 +228,7 @@ class Reservation(Base):
     phone: Mapped[str] = mapped_column(String(20))
     email: Mapped[str] = mapped_column(String(255))
     party_size: Mapped[int] = mapped_column(Integer)
-    date: Mapped[date] = mapped_column(Date)
+    date: Mapped[date] = mapped_column(Date, index=True)
     time: Mapped[time] = mapped_column(Time)
     status: Mapped[ReservationStatus] = mapped_column(Enum(ReservationStatus), default=ReservationStatus.pending)
     special_requests: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -246,7 +246,7 @@ class Review(Base):
     rating: Mapped[int] = mapped_column(Integer)
     comment: Mapped[str] = mapped_column(Text)
     source: Mapped[str] = mapped_column(String(50), default="curated")
-    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

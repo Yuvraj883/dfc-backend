@@ -14,3 +14,4 @@ slowapi==0.1.9
 authlib==1.4.0
 itsdangerous==2.2.0
 upstash-redis==1.7.0
+cloudinary==1.41.0

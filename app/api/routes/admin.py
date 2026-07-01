@@ -1,7 +1,10 @@
 from datetime import date, datetime, timezone
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+import asyncio
+import cloudinary
+import cloudinary.uploader
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -42,6 +45,23 @@ from app.services.orders import open_table_session
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+cloudinary.config(
+    cloud_name=settings.cloudinary_cloud_name,
+    api_key=settings.cloudinary_api_key,
+    api_secret=settings.cloudinary_api_secret,
+)
+
+@router.post("/upload")
+async def admin_upload_image(
+    file: UploadFile = File(...),
+    user: User = Depends(require_staff),
+):
+    contents = await file.read()
+    try:
+        result = await asyncio.to_thread(cloudinary.uploader.upload, contents, folder="dfc_menu")
+        return {"url": result.get("secure_url")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/dashboard", response_model=DashboardStats)
 async def dashboard(
