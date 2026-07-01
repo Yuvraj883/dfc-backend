@@ -123,7 +123,7 @@ async def get_order(
 @router.get("/orders", response_model=list[OrderResponse])
 async def list_my_orders(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Order).options(selectinload(Order.items)).where(Order.user_id == user.id).order_by(Order.created_at.desc())
+        select(Order).options(selectinload(Order.items)).where(Order.user_id == user.id).order_by(Order.created_at.desc()).limit(50)
     )
     orders = result.scalars().all()
     return [order_to_response(o) for o in orders]
