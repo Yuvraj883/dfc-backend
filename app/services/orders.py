@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -286,5 +287,8 @@ async def create_reservation(db: AsyncSession, request: CreateReservationRequest
         special_requests=request.special_requests,
     )
     db.add(reservation)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        raise ValueError("You already have a booking for this time slot.")
     return reservation
