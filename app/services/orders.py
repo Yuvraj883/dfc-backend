@@ -290,5 +290,5 @@ async def create_reservation(db: AsyncSession, request: CreateReservationRequest
     try:
         await db.flush()
     except IntegrityError:
-        raise ValueError("You already have a booking for this time slot.")
+        raise ValueError("You already have a reservation for this time under this email address.")
     return reservation

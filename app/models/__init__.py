@@ -289,4 +289,4 @@ class RestaurantSettings(Base):
     holiday_closures: Mapped[list] = mapped_column(JSON, default=list)
     banner_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     announcement: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    max_reservations_per_slot: Mapped[int] = mapped_column(Integer, default=5)
+    max_reservations_per_slot: Mapped[int] = mapped_column(Integer, default=1)
